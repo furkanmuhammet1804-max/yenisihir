@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../theme';
@@ -20,14 +20,17 @@ export function LockScreenOverlay({
 }) {
   const [entered, setEntered] = useState('');
 
+  // brief beat so the last dot is visible before "unlocking"; cleared on unmount
+  useEffect(() => {
+    if (entered.length < digitCount) return;
+    const id = setTimeout(() => onComplete(entered), 250);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entered, digitCount]);
+
   const press = (d: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    const next = entered + d;
-    setEntered(next);
-    if (next.length >= digitCount) {
-      // brief beat so the last dot is visible before "unlocking"
-      setTimeout(() => onComplete(next), 250);
-    }
+    setEntered((e) => e + d);
   };
 
   const now = new Date();

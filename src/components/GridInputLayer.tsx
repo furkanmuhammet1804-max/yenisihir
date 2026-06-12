@@ -6,7 +6,9 @@ export type GridAction = { kind: 'digit'; digit: number } | { kind: 'delete' } |
 
 /**
  * Invisible tap keypad covering the video.
- * 3x3 -> digits 1..9. 4x3 adds a phone-style bottom row: delete | 0 | commit.
+ * 3x3 -> digits 1..9; a long-press anywhere enters 0, so values like 10/20/30
+ * and zero-padded digits (07) work on every layout.
+ * 4x3 adds a phone-style bottom row: delete | 0 | commit.
  * `practice` paints a faint grid so the performer can rehearse zones.
  */
 export function GridInputLayer({
@@ -14,11 +16,13 @@ export function GridInputLayer({
   practice,
   enabled,
   onAction,
+  zeroHint,
 }: {
   gridSize: GridSize;
   practice: boolean;
   enabled: boolean;
   onAction: (a: GridAction) => void;
+  zeroHint?: string;
 }) {
   const rows = gridSize === '3x3' ? 3 : 4;
   const cols = 3;
@@ -39,6 +43,11 @@ export function GridInputLayer({
     onAction(cellToAction(row * cols + col));
   };
 
+  const handleLongPress = () => {
+    if (!enabled) return;
+    onAction({ kind: 'digit', digit: 0 });
+  };
+
   const onLayout = (e: LayoutChangeEvent) =>
     setSize({ w: Math.max(1, e.nativeEvent.layout.width), h: Math.max(1, e.nativeEvent.layout.height) });
 
@@ -47,10 +56,11 @@ export function GridInputLayer({
 
   return (
     <Pressable
-      style={StyleSheet.absoluteFill}
+      style={[StyleSheet.absoluteFill, { pointerEvents: enabled ? 'auto' : 'none' }]}
       onLayout={onLayout}
       onPress={handlePress}
-      pointerEvents={enabled ? 'auto' : 'none'}
+      onLongPress={handleLongPress}
+      delayLongPress={380}
     >
       {practice && (
         <View style={[StyleSheet.absoluteFill, styles.practiceWrap]} pointerEvents="none">
@@ -59,6 +69,7 @@ export function GridInputLayer({
               <Text style={styles.cellText}>{l}</Text>
             </View>
           ))}
+          {rows === 3 && zeroHint ? <Text style={styles.zeroHint}>{zeroHint}</Text> : null}
         </View>
       )}
     </Pressable>
@@ -74,4 +85,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.12)',
   },
   cellText: { color: 'rgba(255,255,255,0.18)', fontSize: 22, fontWeight: '700' },
+  zeroHint: {
+    position: 'absolute',
+    bottom: 8,
+    alignSelf: 'center',
+    color: 'rgba(255,255,255,0.22)',
+    fontSize: 12,
+  },
 });

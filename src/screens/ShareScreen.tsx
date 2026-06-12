@@ -8,12 +8,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useSettingsStore, useT } from '../store/useSettingsStore';
+import { exporter } from '../services/exportService';
 import { Btn, Card, Label, SectionHeader, Title } from '../components/ui';
 import { colors, radius, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Share'>;
-
-import { exporter } from '../services/exportService';
 
 export function ShareScreen({ navigation, route }: Props) {
   const t = useT();

@@ -1,9 +1,12 @@
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { IndexList, TrickVideo } from '../types';
 import { demoVideos } from '../services/demoData';
-import { builtInLists } from '../services/builtInLists';
+import { getBuiltInLists } from '../services/builtInLists';
+import { toPortableUri } from '../services/media';
+import { useSettingsStore } from './useSettingsStore';
 import { makeId } from '../utils/id';
 
 interface LibraryState {
@@ -48,14 +51,32 @@ export const useLibraryStore = create<LibraryState>()(
     {
       name: 'mindframe.library.v1',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      // v1 -> v2: absolute file:// paths become portable bare filenames
+      migrate: (persisted, version) => {
+        const state = persisted as { videos?: TrickVideo[]; customLists?: IndexList[] };
+        if (version < 2 && state.videos) {
+          state.videos = state.videos.map((v) => ({
+            ...v,
+            uri: toPortableUri(v.uri),
+            thumbnailUri: v.thumbnailUri ? toPortableUri(v.thumbnailUri) : undefined,
+          }));
+        }
+        return state;
+      },
     },
   ),
 );
 
-/** All lists visible to the editor/perform layers (built-in + custom). */
+/**
+ * All lists visible to the editor/perform layers (built-in + custom).
+ * Memoized so consumers (e.g. the remote-listener effect) get a stable
+ * reference and don't churn subscriptions on every render.
+ */
 export function useAllLists(): IndexList[] {
   const custom = useLibraryStore((s) => s.customLists);
-  return [...builtInLists, ...custom];
+  const lang = useSettingsStore((s) => s.language);
+  return useMemo(() => [...getBuiltInLists(lang), ...custom], [custom, lang]);
 }
 
 export function resolveListItem(listId: string | undefined, n: number, lists: IndexList[]): string | undefined {

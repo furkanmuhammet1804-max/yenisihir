@@ -5,6 +5,7 @@ import { predictionKind } from '../types';
 import { colors, radius, spacing } from '../theme';
 import { Btn, Card } from './ui';
 import { useT } from '../store/useSettingsStore';
+import { resolveMediaUri } from '../services/media';
 import { formatTime } from '../utils/time';
 
 export function VideoCard({
@@ -28,7 +29,7 @@ export function VideoCard({
     <Card style={styles.card}>
       <View style={styles.topRow}>
         {video.thumbnailUri ? (
-          <Image source={{ uri: video.thumbnailUri }} style={styles.thumb} />
+          <Image source={{ uri: resolveMediaUri(video.thumbnailUri) }} style={styles.thumb} />
         ) : (
           <View style={[styles.thumb, styles.thumbPlaceholder]}>
             <Text style={styles.thumbIcon}>🎬</Text>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEventListener } from 'expo';
@@ -12,11 +12,11 @@ import { useLibraryStore, useAllLists, resolveListItem } from '../store/useLibra
 import { usePerformStore } from '../store/usePerformStore';
 import { useSettingsStore, useT } from '../store/useSettingsStore';
 import { transmitter } from '../services/transmitter';
-import { pickImage } from '../services/media';
+import { pickImage, resolveMediaUri } from '../services/media';
 import { GridInputLayer, type GridAction } from '../components/GridInputLayer';
 import { LockScreenOverlay } from '../components/LockScreenOverlay';
 import { PasswordGate } from '../components/PasswordGate';
-import { DrawingCanvas } from '../components/DrawingCanvas';
+import { DrawingCanvas, strokesToPaths, type Point } from '../components/DrawingCanvas';
 import { PredictionOverlay } from '../components/PredictionOverlay';
 import { Btn } from '../components/ui';
 import { colors, spacing } from '../theme';
@@ -51,7 +51,7 @@ export function PerformScreen({ navigation, route }: Props) {
   const [time, setTime] = useState(0);
   const [size, setSize] = useState({ w: 1, h: 1 });
   const [drawPadOpen, setDrawPadOpen] = useState(false);
-  const [drawPaths, setDrawPaths] = useState<string[]>([]);
+  const [drawStrokes, setDrawStrokes] = useState<Point[][]>([]);
   const [digitBuffer, setDigitBuffer] = useState('');
   const pausedForInputRef = useRef(false);
   const lastTapRef = useRef(0);
@@ -61,14 +61,23 @@ export function PerformScreen({ navigation, route }: Props) {
     [video],
   );
 
-  const player = useVideoPlayer(video?.uri ?? null, (p) => {
+  const player = useVideoPlayer(video ? resolveMediaUri(video.uri) : null, (p) => {
     p.loop = false;
-    p.timeUpdateEventInterval = 0.05;
+    // 0.2s keeps reveal timing tight (fade-in masks the boundary) without
+    // re-rendering the whole tree 20x per second.
+    p.timeUpdateEventInterval = 0.2;
   });
 
   useEffect(() => {
     reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // A spectator pressing Android's back button must not pop the performance;
+  // the only exit is the hidden 2s corner long-press.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => sub.remove();
   }, []);
 
   useEventListener(player, 'timeUpdate', (e) => setTime(e.currentTime));
@@ -166,7 +175,7 @@ export function PerformScreen({ navigation, route }: Props) {
 
   const openDrawPad = () => {
     if (!drawReveal || phase !== 'playing') return;
-    setDrawPaths([]);
+    setDrawStrokes([]);
     setDrawPadOpen(true);
   };
 
@@ -174,7 +183,7 @@ export function PerformScreen({ navigation, route }: Props) {
     // double-tap confirms the drawing and hides the pad
     const now = Date.now();
     if (now - lastTapRef.current < 350) {
-      if (drawReveal) setValue({ revealId: drawReveal.id, display: '', paths: drawPaths });
+      if (drawReveal) setValue({ revealId: drawReveal.id, display: '', paths: strokesToPaths(drawStrokes) });
       setDrawPadOpen(false);
     }
     lastTapRef.current = now;
@@ -244,6 +253,7 @@ export function PerformScreen({ navigation, route }: Props) {
         practice={settings.gridPractice}
         enabled={gridEnabled}
         onAction={onGridAction}
+        zeroHint={t('gridZeroHint')}
       />
 
       {/* practice readout — performer rehearsal only */}
@@ -260,8 +270,8 @@ export function PerformScreen({ navigation, route }: Props) {
       {drawPadOpen && (
         <Pressable style={[StyleSheet.absoluteFill, styles.drawPad]} onPress={onDrawPadTap}>
           <DrawingCanvas
-            paths={drawPaths}
-            onPathsChange={setDrawPaths}
+            strokes={drawStrokes}
+            onStrokesChange={setDrawStrokes}
             strokeColor="#FFFFFF"
             strokeWidth={3}
             strokeOpacity={0.22}

@@ -1,4 +1,5 @@
 import type { PerformValue, TrickVideo } from '../types';
+import { resolveMediaUri } from './media';
 
 /**
  * Video export architecture.
@@ -24,7 +25,7 @@ export interface VideoExporter {
 
 class PassthroughExporter implements VideoExporter {
   async exportVideo(video: TrickVideo): Promise<ExportResult> {
-    return { uri: video.uri, rendered: false };
+    return { uri: resolveMediaUri(video.uri), rendered: false };
   }
 }
 

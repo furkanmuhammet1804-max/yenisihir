@@ -5,8 +5,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '../navigation/types';
 import { useLibraryStore } from '../store/useLibraryStore';
-import { builtInLists } from '../services/builtInLists';
-import { useT } from '../store/useSettingsStore';
+import { getBuiltInLists } from '../services/builtInLists';
+import { useSettingsStore, useT } from '../store/useSettingsStore';
 import { Btn, Card, Label, SectionHeader, Title } from '../components/ui';
 import { colors, radius, spacing } from '../theme';
 
@@ -15,6 +15,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'IndexLists'>;
 export function IndexListsScreen({ navigation }: Props) {
   const t = useT();
   const insets = useSafeAreaInsets();
+  const lang = useSettingsStore((s) => s.language);
+  const builtIns = getBuiltInLists(lang);
   const customLists = useLibraryStore((s) => s.customLists);
   const addList = useLibraryStore((s) => s.addList);
   const updateList = useLibraryStore((s) => s.updateList);
@@ -97,7 +99,7 @@ export function IndexListsScreen({ navigation }: Props) {
           <View style={styles.listRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.listName}>{l.name}</Text>
-              <Label>{l.items.length} öğe · {l.items.slice(0, 4).join(', ')}…</Label>
+              <Label>{l.items.length} {t('itemsWord')} · {l.items.slice(0, 4).join(', ')}…</Label>
             </View>
             <Btn small kind="ghost" label={t('il_edit')} onPress={() => startEdit(l.id)} />
             <Btn small kind="danger" label={t('delete')} onPress={() => removeList(l.id)} />
@@ -106,10 +108,10 @@ export function IndexListsScreen({ navigation }: Props) {
       ))}
 
       <SectionHeader>{t('il_builtIn')}</SectionHeader>
-      {builtInLists.map((l) => (
+      {builtIns.map((l) => (
         <Card key={l.id} style={{ marginBottom: spacing(2) }}>
           <Text style={styles.listName}>{l.name}</Text>
-          <Label>{l.items.length} öğe · {l.items.slice(0, 4).join(', ')}…</Label>
+          <Label>{l.items.length} {t('itemsWord')} · {l.items.slice(0, 4).join(', ')}…</Label>
         </Card>
       ))}
 

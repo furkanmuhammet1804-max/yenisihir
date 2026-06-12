@@ -20,9 +20,9 @@ import Slider from '@react-native-community/slider';
 
 import type { RootStackParamList } from '../navigation/types';
 import type { FontChoice, InputMethod, OverlayStyle, Reveal, RevealType, TrickVideo } from '../types';
-import { useLibraryStore, useAllLists } from '../store/useLibraryStore';
+import { useLibraryStore, useAllLists, resolveListItem } from '../store/useLibraryStore';
 import { useSettingsStore, useT } from '../store/useSettingsStore';
-import { pickVideoFromLibrary } from '../services/media';
+import { pickVideoFromLibrary, resolveMediaUri } from '../services/media';
 import { makeId } from '../utils/id';
 import { clamp, formatTime, FRAME_STEP } from '../utils/time';
 import { fitRect } from '../utils/layout';
@@ -102,16 +102,19 @@ export function EditorScreen({ navigation, route }: Props) {
   // letterbox-aware rect of the footage inside the preview box
   const videoRect = fitRect(draft.width ?? 16, draft.height ?? 9, previewSize.w, previewSize.h);
 
-  const player = useVideoPlayer(draft.uri || null, (p) => {
+  const initialUriRef = useRef(draft.uri);
+  const player = useVideoPlayer(draft.uri ? resolveMediaUri(draft.uri) : null, (p) => {
     p.loop = false;
     p.timeUpdateEventInterval = 0.1;
     p.muted = true;
   });
 
   // useVideoPlayer pins the initial source; swap it explicitly when the user
-  // picks a different video.
+  // picks a different video (skip the mount run — the initial source is set).
   useEffect(() => {
-    if (draft.uri) player.replaceAsync(draft.uri).catch(() => {});
+    if (draft.uri && draft.uri !== initialUriRef.current) {
+      player.replaceAsync(resolveMediaUri(draft.uri)).catch(() => {});
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.uri]);
 
@@ -249,7 +252,14 @@ export function EditorScreen({ navigation, route }: Props) {
   const previewContent = (reveal: Reveal) => {
     if (reveal.type === 'drawing') return { display: '', paths: SAMPLE_PATHS };
     if (reveal.type === 'picture') return { display: '🖼', paths: undefined };
-    return { display: previewValue || '28' };
+    const raw = previewValue || '28';
+    // with an index list bound, preview what the audience will actually see
+    const n = parseInt(raw, 10);
+    if (reveal.type === 'number' && reveal.indexListId && !Number.isNaN(n)) {
+      const item = resolveListItem(reveal.indexListId, n, lists);
+      if (item) return { display: item };
+    }
+    return { display: raw };
   };
 
   return (
