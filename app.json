@@ -8,6 +8,7 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0B0B10",
     "ios": {
+      "bundleIdentifier": "com.furkanmuhammet.mindframe",
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "MindFrame videolarınızı ve fotoğraflarınızı performanslarda kullanmak için galeriye erişir.",
@@ -16,6 +17,8 @@
       }
     },
     "android": {
+      "package": "com.furkanmuhammet.mindframe",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0B0B10",
         "foregroundImage": "./assets/android-icon-foreground.png",
