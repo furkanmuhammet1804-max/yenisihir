@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { TrickVideo } from '../types';
 import { predictionKind } from '../types';
 import { colors, radius, spacing } from '../theme';
@@ -10,12 +10,17 @@ import { formatTime } from '../utils/time';
 
 export function VideoCard({
   video,
+  locked,
+  onOpen,
   onPerform,
   onEdit,
   onShare,
   onDelete,
 }: {
   video: TrickVideo;
+  /** Premium-gated and not yet unlocked — perform routes to the paywall. */
+  locked?: boolean;
+  onOpen: () => void;
   onPerform: () => void;
   onEdit: () => void;
   onShare: () => void;
@@ -27,7 +32,7 @@ export function VideoCard({
 
   return (
     <Card style={styles.card}>
-      <View style={styles.topRow}>
+      <Pressable onPress={onOpen} style={styles.topRow}>
         {video.thumbnailUri ? (
           <Image source={{ uri: resolveMediaUri(video.thumbnailUri) }} style={styles.thumb} />
         ) : (
@@ -37,6 +42,7 @@ export function VideoCard({
         )}
         <View style={styles.meta}>
           <Text style={styles.name} numberOfLines={1}>
+            {video.premium ? (locked ? '🔒 ' : '★ ') : ''}
             {video.name}
           </Text>
           <Text style={styles.sub}>
@@ -46,11 +52,13 @@ export function VideoCard({
           <Text style={styles.sub}>
             {video.durationSec > 0 ? formatTime(video.durationSec) : '—'}
             {video.isDemo ? '  ·  DEMO' : ''}
+            {video.premium ? `  ·  ${t('premiumBadge').toUpperCase()}` : ''}
           </Text>
         </View>
-      </View>
+        <Text style={styles.chevron}>›</Text>
+      </Pressable>
       <View style={styles.actions}>
-        <Btn small kind="gold" label={`▶ ${t('perform')}`} onPress={onPerform} />
+        <Btn small kind="gold" label={locked ? `🔒 ${t('perform')}` : `▶ ${t('perform')}`} onPress={onPerform} />
         <Btn small kind="ghost" label={t('edit')} onPress={onEdit} />
         <Btn small kind="ghost" label={t('share')} onPress={onShare} />
         <Btn small kind="ghost" label={t('delete')} onPress={onDelete} />
@@ -66,6 +74,7 @@ const styles = StyleSheet.create({
   thumbPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   thumbIcon: { fontSize: 24 },
   meta: { flex: 1, justifyContent: 'center', gap: 3 },
+  chevron: { color: colors.textDim, fontSize: 26, fontWeight: '300', alignSelf: 'center' },
   name: { color: colors.text, fontSize: 16, fontWeight: '700' },
   sub: { color: colors.textDim, fontSize: 12 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(2), marginTop: spacing(3) },

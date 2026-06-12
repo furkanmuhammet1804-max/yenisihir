@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { useLibraryStore } from '../store/useLibraryStore';
+import { usePremiumStore, isLocked } from '../store/usePremiumStore';
 import { useT } from '../store/useSettingsStore';
 import { VideoCard } from '../components/VideoCard';
 import { EmptyState } from '../components/EmptyState';
@@ -19,6 +20,7 @@ export function GalleryScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const videos = useLibraryStore((s) => s.videos);
   const removeVideo = useLibraryStore((s) => s.removeVideo);
+  const isPremium = usePremiumStore((s) => s.isPremium);
 
   const own = videos.filter((v) => !v.isDemo);
   const demos = videos.filter((v) => v.isDemo);
@@ -29,16 +31,25 @@ export function GalleryScreen({ navigation }: Props) {
       { text: t('delete'), style: 'destructive', onPress: () => removeVideo(v.id) },
     ]);
 
-  const renderCard = (v: TrickVideo) => (
-    <VideoCard
-      key={v.id}
-      video={v}
-      onPerform={() => navigation.navigate('Perform', { videoId: v.id })}
-      onEdit={() => navigation.navigate('Editor', { videoId: v.id })}
-      onShare={() => navigation.navigate('Share', { videoId: v.id })}
-      onDelete={() => confirmDelete(v)}
-    />
-  );
+  const renderCard = (v: TrickVideo) => {
+    const locked = isLocked(v, isPremium);
+    return (
+      <VideoCard
+        key={v.id}
+        video={v}
+        locked={locked}
+        onOpen={() => navigation.navigate('Detail', { videoId: v.id })}
+        onPerform={() =>
+          locked
+            ? navigation.navigate('Paywall', { videoId: v.id })
+            : navigation.navigate('Perform', { videoId: v.id })
+        }
+        onEdit={() => navigation.navigate('Editor', { videoId: v.id })}
+        onShare={() => navigation.navigate('Share', { videoId: v.id })}
+        onDelete={() => confirmDelete(v)}
+      />
+    );
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing(3) }]}>

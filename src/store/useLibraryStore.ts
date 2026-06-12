@@ -51,8 +51,9 @@ export const useLibraryStore = create<LibraryState>()(
     {
       name: 'mindframe.library.v1',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 2,
+      version: 3,
       // v1 -> v2: absolute file:// paths become portable bare filenames
+      // v2 -> v3: reveals gain an animation field (default 'fade')
       migrate: (persisted, version) => {
         const state = persisted as { videos?: TrickVideo[]; customLists?: IndexList[] };
         if (version < 2 && state.videos) {
@@ -60,6 +61,12 @@ export const useLibraryStore = create<LibraryState>()(
             ...v,
             uri: toPortableUri(v.uri),
             thumbnailUri: v.thumbnailUri ? toPortableUri(v.thumbnailUri) : undefined,
+          }));
+        }
+        if (version < 3 && state.videos) {
+          state.videos = state.videos.map((v) => ({
+            ...v,
+            reveals: v.reveals.map((r) => ({ ...r, animation: r.animation ?? 'fade' })),
           }));
         }
         return state;

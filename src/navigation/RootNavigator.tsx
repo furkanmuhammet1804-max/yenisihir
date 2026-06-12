@@ -3,7 +3,9 @@ import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './types';
 import { GalleryScreen } from '../screens/GalleryScreen';
+import { DetailScreen } from '../screens/DetailScreen';
 import { EditorScreen } from '../screens/EditorScreen';
+import { PaywallScreen } from '../screens/PaywallScreen';
 import { PerformScreen } from '../screens/PerformScreen';
 import { ShareScreen } from '../screens/ShareScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
@@ -29,7 +31,9 @@ export function RootNavigator() {
     <NavigationContainer theme={theme}>
       <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="Gallery" component={GalleryScreen} />
+        <Stack.Screen name="Detail" component={DetailScreen} />
         <Stack.Screen name="Editor" component={EditorScreen} />
+        <Stack.Screen name="Paywall" component={PaywallScreen} options={{ presentation: 'modal' }} />
         <Stack.Screen
           name="Perform"
           component={PerformScreen}

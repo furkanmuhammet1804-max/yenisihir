@@ -34,6 +34,9 @@ export interface OverlayStyle {
 
 export type FontChoice = 'system' | 'serif' | 'mono' | 'condensed';
 
+/** How a reveal appears on screen at its inTime. */
+export type RevealAnimation = 'fade' | 'slideUp' | 'pop' | 'none';
+
 /** A single reveal moment inside a video. Multi-prediction = several reveals. */
 export interface Reveal {
   id: string;
@@ -42,6 +45,7 @@ export interface Reveal {
   inputMethod: InputMethod;
   inTime: number; // seconds — overlay becomes visible
   outTime: number; // seconds — overlay hides; <=0 means "until end"
+  animation: RevealAnimation;
   style: OverlayStyle;
   /** Number reveals can map through an index list (28 -> 28th card). */
   indexListId?: string;
@@ -63,6 +67,8 @@ export interface TrickVideo {
   width?: number;
   height?: number;
   isDemo: boolean;
+  /** Locked behind the premium entitlement (see usePremiumStore). */
+  premium?: boolean;
   reveals: Reveal[];
   createdAt: number;
   updatedAt: number;

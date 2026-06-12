@@ -38,7 +38,9 @@ src/
 
 ## Özellikler
 
-- Video galerisi: demo videolar + kullanıcı videoları, thumbnail, tip/yöntem rozetleri, sahnele/düzenle/paylaş/sil.
+- Video galerisi: demo videolar + kullanıcı videoları, thumbnail, tip/yöntem rozetleri, sahnele/düzenle/paylaş/sil. Karta dokununca **efekt detay sayfası** açılır: poster, reveal dökümü, zamanlamalar ve tüm aksiyonlar.
+- Reveal **animasyon seçenekleri**: yumuşak geçiş (fade), aşağıdan süzülme, pop ve animasyonsuz — editörden reveal başına seçilir.
+- **Premium kilit altyapısı**: `premium: true` işaretli efektler kilitli görünür; sahneleme paywall'a yönlenir. Satın alma `store/usePremiumStore.ts` içindeki `EntitlementProvider` arayüzünden geçer (şimdilik mock) — RevenueCat / expo-iap eklemek = aynı arayüzü gerçek mağazaya bağlamak. Ayarlar'da geliştirici simülasyon anahtarı var.
 - Editör: galeriden video seçme, reveal pencerelerini gösteren **timeline**, scrubber + frame frame ilerleme, Image In/Out zamanı, overlay'i **parmakla sürükleyerek** konumlama, boyut/kalınlık/opaklık/döndürme/perspektif/renk/font ayarları, çoklu reveal (multi prediction), index listesi bağlama, önek/sonek, **Test Performansı** butonu ve kaydedilmemiş değişiklik uyarısı.
 - Performans: tam ekran video, gizli giriş yöntemleri:
   - **Grid (karartmasız / karartmalı)** — görünmez tuş takımı; varsayılan **4×3** (1-9, ⌫, 0, ✓). 3×3 seçilirse **uzun basış 0 girer** — 10/20/30 ve "07" gibi değerler her düzende girilebilir, 52 kartlık listede tüm kartlara erişilir.
@@ -61,5 +63,6 @@ src/
 
 - [ ] FFmpegKit ile overlay'in videoya render edilmesi (gerçek export)
 - [ ] Supabase Realtime transmitter (ikinci cihaz)
-- [ ] Premium / satın alma sistemi
+- [x] Premium kilit altyapısı (mock satın alma — gerçek IAP `EntitlementProvider`'a takılır)
+- [ ] Gerçek mağaza entegrasyonu (RevenueCat / expo-iap)
 - [ ] Çizim girişinin reveal anında animasyonlu belirmesi

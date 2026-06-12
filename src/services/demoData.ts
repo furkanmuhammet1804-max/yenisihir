@@ -36,6 +36,7 @@ export const demoVideos: TrickVideo[] = [
         inputMethod: 'gridNoDim',
         inTime: 8,
         outTime: 0,
+        animation: 'fade',
         digitCount: 2,
         style: { ...baseStyle, color: '#D4AF37' },
         prefix: '',
@@ -61,6 +62,7 @@ export const demoVideos: TrickVideo[] = [
         inputMethod: 'password',
         inTime: 7,
         outTime: 0,
+        animation: 'slideUp',
         digitCount: 2,
         style: { ...baseStyle, fontSize: 48, fontFamily: 'serif' },
         prefix: '',
@@ -76,6 +78,8 @@ export const demoVideos: TrickVideo[] = [
     width: 1280,
     height: 720,
     isDemo: true,
+    // showcases the premium gate end to end with the mock entitlement
+    premium: true,
     createdAt: 0,
     updatedAt: 0,
     reveals: [
@@ -86,6 +90,7 @@ export const demoVideos: TrickVideo[] = [
         inputMethod: 'pause',
         inTime: 9,
         outTime: 0,
+        animation: 'pop',
         digitCount: 2,
         indexListId: 'builtin_cards',
         style: { ...baseStyle, fontSize: 40, color: '#8B5CF6' },

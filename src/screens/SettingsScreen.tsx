@@ -7,6 +7,7 @@ import type { RootStackParamList } from '../navigation/types';
 import type { FontChoice, InputMethod } from '../types';
 import { useSettingsStore, useT } from '../store/useSettingsStore';
 import { useLibraryStore } from '../store/useLibraryStore';
+import { usePremiumStore } from '../store/usePremiumStore';
 import { transmitter } from '../services/transmitter';
 import { Btn, Card, Chip, Label, SectionHeader, Title } from '../components/ui';
 import { SliderRow } from '../components/SliderRow';
@@ -33,6 +34,8 @@ export function SettingsScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const s = useSettingsStore();
   const restoreDemos = useLibraryStore((st) => st.restoreDemos);
+  const isPremium = usePremiumStore((st) => st.isPremium);
+  const setPremium = usePremiumStore((st) => st.setPremium);
   const [assistantValue, setAssistantValue] = useState('');
 
   return (
@@ -92,6 +95,17 @@ export function SettingsScreen({ navigation }: Props) {
       </View>
       <Label>{t('s_color')}</Label>
       <ColorSwatches value={s.defaultColor} onChange={(defaultColor) => s.set({ defaultColor })} />
+
+      <SectionHeader info={t('s_premiumHint')}>{t('s_premium')}</SectionHeader>
+      <View style={styles.switchRow}>
+        <Label>{isPremium ? `★ ${t('premiumActive')}` : t('s_premiumSim')}</Label>
+        <Switch
+          value={isPremium}
+          onValueChange={setPremium}
+          trackColor={{ true: colors.gold, false: colors.border }}
+        />
+      </View>
+      {!isPremium && <Btn kind="ghost" label={t('goPremium')} onPress={() => navigation.navigate('Paywall', {})} />}
 
       <SectionHeader>{t('demoVideos')}</SectionHeader>
       <Btn

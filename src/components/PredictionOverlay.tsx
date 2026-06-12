@@ -1,8 +1,8 @@
 import React from 'react';
 import { Image, Text, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
-import type { Reveal } from '../types';
+import type { Reveal, RevealAnimation } from '../types';
 import { fontFamilies } from '../theme';
 import type { Rect } from '../utils/layout';
 import { DRAW_VIEWBOX } from './DrawingCanvas';
@@ -11,6 +11,21 @@ export interface OverlayContent {
   display: string;
   paths?: string[];
   imageUri?: string;
+}
+
+/** Subtle entrances — the goal is "it was always in the footage", not a show-off effect. */
+function enteringFor(animation: RevealAnimation | undefined) {
+  switch (animation ?? 'fade') {
+    case 'none':
+      return undefined;
+    case 'slideUp':
+      return FadeInUp.duration(700);
+    case 'pop':
+      return ZoomIn.duration(450);
+    case 'fade':
+    default:
+      return FadeIn.duration(600);
+  }
 }
 
 /**
@@ -92,7 +107,7 @@ export function PredictionOverlay({
   return (
     <Animated.View
       pointerEvents="none"
-      entering={animated ? FadeIn.duration(600) : undefined}
+      entering={animated ? enteringFor(reveal.animation) : undefined}
       style={{
         position: 'absolute',
         left: cx - rect.w / 2,

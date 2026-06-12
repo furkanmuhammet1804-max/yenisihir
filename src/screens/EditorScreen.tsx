@@ -19,7 +19,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Slider from '@react-native-community/slider';
 
 import type { RootStackParamList } from '../navigation/types';
-import type { FontChoice, InputMethod, OverlayStyle, Reveal, RevealType, TrickVideo } from '../types';
+import type { FontChoice, InputMethod, OverlayStyle, Reveal, RevealAnimation, RevealType, TrickVideo } from '../types';
 import { useLibraryStore, useAllLists, resolveListItem } from '../store/useLibraryStore';
 import { useSettingsStore, useT } from '../store/useSettingsStore';
 import { pickVideoFromLibrary, resolveMediaUri } from '../services/media';
@@ -48,6 +48,7 @@ const INPUT_METHODS: InputMethod[] = [
   'remote',
 ];
 const FONTS: FontChoice[] = ['system', 'serif', 'mono', 'condensed'];
+const ANIMATIONS: RevealAnimation[] = ['fade', 'slideUp', 'pop', 'none'];
 
 /** Sample squiggle so drawing reveals have something to preview. */
 const SAMPLE_PATHS = ['M 250 700 C 300 300 500 250 520 500 C 535 690 700 650 740 380'];
@@ -147,6 +148,7 @@ export function EditorScreen({ navigation, route }: Props) {
       inputMethod: settings.defaultInputMethod,
       inTime: Math.round(position * 10) / 10,
       outTime: 0,
+      animation: 'fade',
       digitCount: 2,
       style: defaultStyle(settings.defaultColor, settings.defaultFont),
       prefix: '',
@@ -465,6 +467,13 @@ export function EditorScreen({ navigation, route }: Props) {
             <View style={styles.chipRow}>
               {FONTS.map((f) => (
                 <Chip key={f} label={f} active={activeReveal.style.fontFamily === f} onPress={() => patchStyle(activeReveal.id, { fontFamily: f })} />
+              ))}
+            </View>
+
+            <SectionHeader info={t('animationInfo')}>{t('animation')}</SectionHeader>
+            <View style={styles.chipRow}>
+              {ANIMATIONS.map((a) => (
+                <Chip key={a} label={t(`anim_${a}`)} active={(activeReveal.animation ?? 'fade') === a} onPress={() => patchReveal(activeReveal.id, { animation: a })} />
               ))}
             </View>
 
