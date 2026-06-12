@@ -360,7 +360,6 @@ const styles = StyleSheet.create({
   blackout: { backgroundColor: '#05050A', zIndex: 30 },
   readyWrap: { alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.75)', gap: spacing(3), zIndex: 25 },
   readyText: { color: colors.gold, fontSize: 54 },
-  readyHint: { color: colors.text, fontSize: 16, fontWeight: '600' },
   exitHint: { color: colors.textDim, fontSize: 12 },
   endWrap: {
     alignItems: 'center',

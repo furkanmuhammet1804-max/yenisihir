@@ -29,7 +29,6 @@
     },
     "plugins": [
       "expo-video",
-      "expo-sharing",
       [
         "expo-image-picker",
         {

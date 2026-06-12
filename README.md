@@ -4,10 +4,11 @@ Karanlık, premium bir **mentalizm / video prediction** uygulaması. Önceden ç
 
 > Tamamen özgün marka, tasarım ve metinler. React Native + Expo + TypeScript, iOS öncelikli, Android uyumlu.
 
+**Expo SDK 54** (React Native 0.81, React 19.1) — tüm modüller Expo Go uyumludur, native development build gerekmez.
+
 ## Çalıştırma
 
 ```bash
-cd mindframe
 npm install
 npx expo start
 ```
