@@ -1,17 +1,23 @@
 {
   "expo": {
-    "name": "mindframe",
+    "name": "MindFrame",
     "slug": "mindframe",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0B10",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "MindFrame videolarınızı ve fotoğraflarınızı performanslarda kullanmak için galeriye erişir.",
+        "NSCameraUsageDescription": "MindFrame tahmin fotoğrafı çekmek için kameraya erişir.",
+        "NSMicrophoneUsageDescription": "Video kaydı sırasında ses için mikrofon erişimi gerekir."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B0B10",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,6 +26,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-video",
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MindFrame videolarınızı ve fotoğraflarınızı performanslarda kullanmak için galeriye erişir."
+        }
+      ]
+    ]
   }
 }
