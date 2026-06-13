@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+﻿import React from 'react';
+import { Alert, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -8,11 +8,10 @@ import type { FontChoice, InputMethod } from '../types';
 import { useSettingsStore, useT } from '../store/useSettingsStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { usePremiumStore } from '../store/usePremiumStore';
-import { transmitter } from '../services/transmitter';
-import { Btn, Card, Chip, Label, SectionHeader, Title } from '../components/ui';
+import { Btn, Chip, Label, SectionHeader, Title } from '../components/ui';
 import { SliderRow } from '../components/SliderRow';
 import { ColorSwatches } from '../components/ColorSwatches';
-import { colors, radius, spacing } from '../theme';
+import { colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -36,7 +35,6 @@ export function SettingsScreen({ navigation }: Props) {
   const restoreDemos = useLibraryStore((st) => st.restoreDemos);
   const isPremium = usePremiumStore((st) => st.isPremium);
   const setPremium = usePremiumStore((st) => st.setPremium);
-  const [assistantValue, setAssistantValue] = useState('');
 
   return (
     <ScrollView
@@ -117,26 +115,13 @@ export function SettingsScreen({ navigation }: Props) {
         }}
       />
 
-      {/* Mock second device — proves the Remote architecture end to end */}
-      <SectionHeader info={t('s_assistantHint')}>{t('s_assistant')}</SectionHeader>
-      <Card>
-        <TextInput
-          style={styles.input}
-          value={assistantValue}
-          onChangeText={setAssistantValue}
-          placeholder={t('valuePh')}
-          placeholderTextColor={colors.textDim}
-        />
-        <Btn
-          small
-          label={t('sendValue')}
-          onPress={() => {
-            if (!assistantValue.trim()) return;
-            transmitter.send({ kind: 'text', value: assistantValue.trim() });
-            setAssistantValue('');
-          }}
-        />
-      </Card>
+      <SectionHeader>{t('s_tools')}</SectionHeader>
+      <View style={{ gap: spacing(2) }}>
+        <Btn kind="ghost" label={`🤝 ${t('s_assistant')}`} info={t('s_assistantHint')} onPress={() => navigation.navigate('Assistant')} />
+        <Btn kind="ghost" label={`≡ ${t('indexLists')}`} onPress={() => navigation.navigate('IndexLists')} />
+        <Btn kind="ghost" label={`🩺 ${t('systemTest')}`} info={t('s_systemTestHint')} onPress={() => navigation.navigate('SystemTest')} />
+        <Btn kind="ghost" label={`✦ ${t('s_replayOnboarding')}`} onPress={() => navigation.navigate('Onboarding')} />
+      </View>
 
       <View style={{ marginTop: spacing(6) }}>
         <Btn kind="ghost" label={t('backToGallery')} onPress={() => navigation.goBack()} />
@@ -153,16 +138,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginVertical: spacing(2),
-  },
-  input: {
-    backgroundColor: colors.bg,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    color: colors.text,
-    paddingHorizontal: spacing(3),
-    paddingVertical: spacing(2),
-    fontSize: 14,
-    marginBottom: spacing(3),
   },
 });

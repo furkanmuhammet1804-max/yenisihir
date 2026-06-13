@@ -20,7 +20,8 @@ Telefonda **Expo Go** ile QR kodu okutun (iOS/Android). `expo-video`, `expo-imag
 ```
 src/
   components/   UI parçaları (overlay, grid, çizim kanvası, kilit ekranı…)
-  screens/      Gallery, Editor, Perform, Share, Settings, IndexLists
+  screens/      Onboarding, Home, Gallery, Detail, Editor, Perform, Share,
+                Paywall, Assistant (Yardımcı Modu), SystemTest, Settings, IndexLists
   navigation/   react-navigation native stack
   store/        zustand: library (persist), settings (persist), perform (runtime)
   services/     media (picker+thumbnail), transmitter (mock realtime), demo data
@@ -38,6 +39,11 @@ src/
 
 ## Özellikler
 
+- **İlk açılış deneyimi:** 3 kartlık onboarding (numarayı 30 saniyede anlatır) → ana ekran. Ana ekran 5 net seçenektir: Yeni Gösteri Oluştur / Videolarım / Hazır Örnekler / Yardımcı Modu / Ayarlar.
+- **Hazır Örnekler:** Sayı, Kart (Premium), İsim, Ülke ve Çizim tahmini — beş çalışan örnek gösteri; kullanıcı hiçbir şey kurmadan dener.
+- **Adım adım editör:** 1) Video Seç 2) Tahmini Ayarla 3) Zamanı Belirle 4) Yerini Belirle 5) Kaydet & Dene. Video seçilince ilk gösterim otomatik eklenir; döndürme/perspektif gibi ayarlar "Gelişmiş" altında katlanır.
+- **Yardımcı Modu:** bağlantı kodu + hazır listelerden hızlı seçim + tahmin gönderme. Şimdilik cihaz içi; kod, gerçek zamanlı backend gelince kanal kimliği olur.
+- **Sistem Testi:** depolama, dosya sistemi, kapak görüntüsü, galeri izni, paylaşım servisi, örnek video ağı ve yerleşim katmanını gerçek kontrollerle doğrular.
 - Video galerisi: demo videolar + kullanıcı videoları, thumbnail, tip/yöntem rozetleri, sahnele/düzenle/paylaş/sil. Karta dokununca **efekt detay sayfası** açılır: poster, reveal dökümü, zamanlamalar ve tüm aksiyonlar.
 - Reveal **animasyon seçenekleri**: yumuşak geçiş (fade), aşağıdan süzülme, pop ve animasyonsuz — editörden reveal başına seçilir.
 - **Premium kilit altyapısı**: `premium: true` işaretli efektler kilitli görünür; sahneleme paywall'a yönlenir. Satın alma `store/usePremiumStore.ts` içindeki `EntitlementProvider` arayüzünden geçer (şimdilik mock) — RevenueCat / expo-iap eklemek = aynı arayüzü gerçek mağazaya bağlamak. Ayarlar'da geliştirici simülasyon anahtarı var.

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -27,7 +27,7 @@ import { makeId } from '../utils/id';
 import { clamp, formatTime, FRAME_STEP } from '../utils/time';
 import { fitRect } from '../utils/layout';
 import { colors, radius, spacing } from '../theme';
-import { Btn, Chip, InfoDot, Label, SectionHeader } from '../components/ui';
+import { Btn, Chip, InfoDot, Label } from '../components/ui';
 import { SliderRow } from '../components/SliderRow';
 import { ColorSwatches } from '../components/ColorSwatches';
 import { PredictionOverlay } from '../components/PredictionOverlay';
@@ -72,6 +72,19 @@ function defaultStyle(color: string, font: FontChoice): OverlayStyle {
   };
 }
 
+/** Numbered step header — the editor reads like a recipe, top to bottom. */
+function StepHeader({ n, title, hint, done }: { n: number; title: string; hint?: string; done?: boolean }) {
+  return (
+    <View style={styles.stepRow}>
+      <View style={[styles.stepDot, done && styles.stepDotDone]}>
+        <Text style={styles.stepDotText}>{done ? '✓' : n}</Text>
+      </View>
+      <Text style={styles.stepTitle}>{title}</Text>
+      {hint ? <InfoDot text={hint} /> : null}
+    </View>
+  );
+}
+
 export function EditorScreen({ navigation, route }: Props) {
   const t = useT();
   const insets = useSafeAreaInsets();
@@ -98,6 +111,7 @@ export function EditorScreen({ navigation, route }: Props) {
   const [previewValue, setPreviewValue] = useState('28');
   const [position, setPosition] = useState(0);
   const [previewSize, setPreviewSize] = useState({ w: 1, h: 1 });
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const savedJsonRef = useRef(normalize(existing ?? null));
 
   // letterbox-aware rect of the footage inside the preview box
@@ -140,20 +154,22 @@ export function EditorScreen({ navigation, route }: Props) {
       reveals: d.reveals.map((r) => (r.id === id ? { ...r, style: { ...r.style, ...patch } } : r)),
     }));
 
+  const makeReveal = (inTime: number): Reveal => ({
+    id: makeId('rev'),
+    label: `Reveal ${draft.reveals.length + 1}`,
+    type: 'number',
+    inputMethod: settings.defaultInputMethod,
+    inTime: Math.round(inTime * 10) / 10,
+    outTime: 0,
+    animation: 'fade',
+    digitCount: 2,
+    style: defaultStyle(settings.defaultColor, settings.defaultFont),
+    prefix: '',
+    suffix: '',
+  });
+
   const addReveal = () => {
-    const reveal: Reveal = {
-      id: makeId('rev'),
-      label: `Reveal ${draft.reveals.length + 1}`,
-      type: 'number',
-      inputMethod: settings.defaultInputMethod,
-      inTime: Math.round(position * 10) / 10,
-      outTime: 0,
-      animation: 'fade',
-      digitCount: 2,
-      style: defaultStyle(settings.defaultColor, settings.defaultFont),
-      prefix: '',
-      suffix: '',
-    };
+    const reveal = makeReveal(position);
     setDraft((d) => ({ ...d, reveals: [...d.reveals, reveal] }));
     setActiveRevealId(reveal.id);
   };
@@ -167,14 +183,24 @@ export function EditorScreen({ navigation, route }: Props) {
     try {
       const picked = await pickVideoFromLibrary();
       if (!picked) return;
-      setDraft((d) => ({
-        ...d,
-        uri: picked.uri,
-        durationSec: picked.durationSec,
-        thumbnailUri: picked.thumbnailUri,
-        width: picked.width,
-        height: picked.height,
-      }));
+      setDraft((d) => {
+        const next = {
+          ...d,
+          uri: picked.uri,
+          durationSec: picked.durationSec,
+          thumbnailUri: picked.thumbnailUri,
+          width: picked.width,
+          height: picked.height,
+        };
+        // First video pick seeds a reveal near the end of the clip, so a new
+        // user lands on a working show instead of an empty reveal list.
+        if (next.reveals.length === 0) {
+          const reveal = makeReveal(Math.max(1, picked.durationSec * 0.6));
+          next.reveals = [reveal];
+          setActiveRevealId(reveal.id);
+        }
+        return next;
+      });
     } catch {
       Alert.alert('!', t('needVideo'));
     }
@@ -235,6 +261,10 @@ export function EditorScreen({ navigation, route }: Props) {
       Alert.alert('!', t('needName'));
       return null;
     }
+    if (draft.reveals.length === 0) {
+      Alert.alert('!', t('needReveal'));
+      return null;
+    }
     const final = { ...draft, name: draft.name.trim(), updatedAt: Date.now() };
     upsertVideo(final);
     savedJsonRef.current = normalize(final);
@@ -264,6 +294,9 @@ export function EditorScreen({ navigation, route }: Props) {
     return { display: raw };
   };
 
+  const step1Done = Boolean(draft.uri && draft.name.trim());
+  const step2Done = draft.reveals.length > 0;
+
   return (
     <KeyboardAvoidingView
       style={styles.root}
@@ -285,7 +318,7 @@ export function EditorScreen({ navigation, route }: Props) {
           <Btn small kind="gold" label={t('save')} onPress={handleSave} />
         </View>
 
-        {/* ── Video preview + overlay placement ───────────────────── */}
+        {/* ── Live preview + overlay placement (always visible canvas) ── */}
         <GestureDetector gesture={dragGesture}>
           <View
             style={styles.preview}
@@ -302,6 +335,7 @@ export function EditorScreen({ navigation, route }: Props) {
             ) : (
               <View style={styles.previewEmpty}>
                 <Text style={{ fontSize: 40 }}>🎬</Text>
+                <Text style={styles.previewEmptyText}>{t('stepVideoHint')}</Text>
               </View>
             )}
             {activeReveal && (
@@ -314,26 +348,93 @@ export function EditorScreen({ navigation, route }: Props) {
           </View>
         </GestureDetector>
 
-        <View style={{ marginTop: spacing(2), flexDirection: 'row', flexWrap: 'wrap', gap: spacing(2) }}>
-          <Btn small kind="ghost" label={draft.uri ? t('changeVideo') : t('pickVideo')} onPress={handlePickVideo} />
-          {draft.uri ? (
-            <Btn small kind="primary" label={`🎭 ${t('testPerform')}`} onPress={handleTestPerform} info={t('testPerformInfo')} />
-          ) : null}
+        {/* ── Step 1: video + name ─────────────────────────────────── */}
+        <View style={styles.stepBox}>
+          <StepHeader n={1} title={t('stepVideoTitle')} hint={t('stepVideoHint')} done={step1Done} />
+          <Btn block kind={draft.uri ? 'ghost' : 'primary'} label={draft.uri ? t('changeVideo') : `🎬 ${t('pickVideo')}`} onPress={handlePickVideo} />
+          <TextInput
+            style={styles.input}
+            value={draft.name}
+            onChangeText={(name) => setDraft((d) => ({ ...d, name }))}
+            placeholder={t('videoNamePh')}
+            placeholderTextColor={colors.textDim}
+          />
         </View>
 
-        <SectionHeader>{t('videoName')}</SectionHeader>
-        <TextInput
-          style={styles.input}
-          value={draft.name}
-          onChangeText={(name) => setDraft((d) => ({ ...d, name }))}
-          placeholder={t('videoNamePh')}
-          placeholderTextColor={colors.textDim}
-        />
-
-        {/* ── Scrubber / timing ────────────────────────────────────── */}
+        {/* ── Step 2: prediction type + secret input ───────────────── */}
         {draft.uri ? (
-          <>
-            <SectionHeader info={t('positionHint')}>{t('timing')}</SectionHeader>
+          <View style={styles.stepBox}>
+            <StepHeader n={2} title={t('stepRevealTitle')} hint={t('stepRevealHint')} done={step2Done} />
+
+            <View style={styles.chipRow}>
+              {draft.reveals.map((r, i) => (
+                <Chip key={r.id} label={`${i + 1}. ${t(`kind_${r.type}`)}`} active={r.id === activeRevealId} onPress={() => setActiveRevealId(r.id)} />
+              ))}
+              <Chip label={`＋ ${t('addReveal')}`} active={false} onPress={addReveal} />
+            </View>
+
+            {activeReveal && (
+              <>
+                <Label style={styles.fieldLabel}>{t('revealType')}</Label>
+                <View style={styles.chipRow}>
+                  {REVEAL_TYPES.map((rt) => (
+                    <Chip key={rt} label={t(`kind_${rt}`)} active={activeReveal.type === rt} onPress={() => patchReveal(activeReveal.id, { type: rt })} />
+                  ))}
+                </View>
+
+                <Label style={styles.fieldLabel}>{t('inputMethod')}</Label>
+                <View style={styles.chipRow}>
+                  {INPUT_METHODS.map((m) => (
+                    <View key={m} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Chip label={t(`m_${m}`)} active={activeReveal.inputMethod === m} onPress={() => patchReveal(activeReveal.id, { inputMethod: m })} />
+                      <InfoDot text={t(`mi_${m}`)} />
+                    </View>
+                  ))}
+                </View>
+
+                {activeReveal.type === 'number' && (
+                  <>
+                    <SliderRow label={t('digits')} value={activeReveal.digitCount} min={1} max={4} onChange={(v) => patchReveal(activeReveal.id, { digitCount: v })} />
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Label style={styles.fieldLabel}>{t('indexList')}</Label>
+                      <InfoDot text={t('indexListInfo')} />
+                    </View>
+                    <View style={styles.chipRow}>
+                      <Chip label={t('indexListNone')} active={!activeReveal.indexListId} onPress={() => patchReveal(activeReveal.id, { indexListId: undefined })} />
+                      {lists.map((l) => (
+                        <Chip key={l.id} label={l.name} active={activeReveal.indexListId === l.id} onPress={() => patchReveal(activeReveal.id, { indexListId: l.id })} />
+                      ))}
+                    </View>
+                  </>
+                )}
+
+                {(activeReveal.type === 'number' || activeReveal.type === 'text') && (
+                  <View style={styles.inlineRow}>
+                    <TextInput
+                      style={[styles.input, { flex: 1, marginVertical: 0 }]}
+                      value={activeReveal.prefix}
+                      onChangeText={(prefix) => patchReveal(activeReveal.id, { prefix })}
+                      placeholder={t('prefixLabel')}
+                      placeholderTextColor={colors.textDim}
+                    />
+                    <TextInput
+                      style={[styles.input, { flex: 1, marginVertical: 0 }]}
+                      value={activeReveal.suffix}
+                      onChangeText={(suffix) => patchReveal(activeReveal.id, { suffix })}
+                      placeholder={t('suffixLabel')}
+                      placeholderTextColor={colors.textDim}
+                    />
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        ) : null}
+
+        {/* ── Step 3: timing ───────────────────────────────────────── */}
+        {draft.uri && activeReveal ? (
+          <View style={styles.stepBox}>
+            <StepHeader n={3} title={t('stepTimingTitle')} hint={t('stepTimingHint')} done={step2Done} />
             <TimelineBar
               duration={draft.durationSec}
               position={position}
@@ -356,88 +457,26 @@ export function EditorScreen({ navigation, route }: Props) {
             </View>
             <View style={styles.frameRow}>
               <Btn small kind="ghost" label="⏪ 1s" onPress={() => seekTo(position - 1)} />
-              <Btn small kind="ghost" label="◀ frame" onPress={() => seekTo(position - FRAME_STEP)} />
+              <Btn small kind="ghost" label="◀" onPress={() => seekTo(position - FRAME_STEP)} />
               <Btn small kind="ghost" label={player.playing ? '⏸' : '▶'} onPress={() => (player.playing ? player.pause() : player.play())} />
-              <Btn small kind="ghost" label="frame ▶" onPress={() => seekTo(position + FRAME_STEP)} />
+              <Btn small kind="ghost" label="▶" onPress={() => seekTo(position + FRAME_STEP)} />
               <Btn small kind="ghost" label="1s ⏩" onPress={() => seekTo(position + 1)} />
             </View>
-          </>
-        ) : null}
-
-        {/* ── Reveals ──────────────────────────────────────────────── */}
-        <SectionHeader info={t('mi_gridNoDim')}>{t('revealsSection')}</SectionHeader>
-        <View style={styles.chipRow}>
-          {draft.reveals.map((r, i) => (
-            <Chip key={r.id} label={`${i + 1}. ${t(`kind_${r.type}`)}`} active={r.id === activeRevealId} onPress={() => setActiveRevealId(r.id)} />
-          ))}
-          <Chip label={`＋ ${t('addReveal')}`} active={false} onPress={addReveal} />
-        </View>
-
-        {activeReveal && (
-          <View style={styles.revealBox}>
-            {/* timing */}
             <View style={styles.inlineRow}>
-              <Btn small label={t('setIn')} onPress={() => patchReveal(activeReveal.id, { inTime: Math.round(position * 10) / 10 })} info={t('inTime')} />
-              <Btn small kind="ghost" label={t('setOut')} onPress={() => patchReveal(activeReveal.id, { outTime: Math.round(position * 10) / 10 })} info={t('outTime')} />
+              <Btn small label={t('setIn')} onPress={() => patchReveal(activeReveal.id, { inTime: Math.round(position * 10) / 10 })} />
+              <Btn small kind="ghost" label={t('setOut')} onPress={() => patchReveal(activeReveal.id, { outTime: Math.round(position * 10) / 10 })} />
             </View>
-            <Label style={{ marginTop: spacing(1) }}>
+            <Label style={{ marginTop: spacing(2) }}>
               {t('inTime')}: {formatTime(activeReveal.inTime)}   ·   {t('outTime')}:{' '}
               {activeReveal.outTime > 0 ? formatTime(activeReveal.outTime) : t('untilEnd')}
             </Label>
+          </View>
+        ) : null}
 
-            {/* type */}
-            <SectionHeader>{t('revealType')}</SectionHeader>
-            <View style={styles.chipRow}>
-              {REVEAL_TYPES.map((rt) => (
-                <Chip key={rt} label={t(`kind_${rt}`)} active={activeReveal.type === rt} onPress={() => patchReveal(activeReveal.id, { type: rt })} />
-              ))}
-            </View>
-
-            {/* input method */}
-            <SectionHeader>{t('inputMethod')}</SectionHeader>
-            <View style={styles.chipRow}>
-              {INPUT_METHODS.map((m) => (
-                <View key={m} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Chip label={t(`m_${m}`)} active={activeReveal.inputMethod === m} onPress={() => patchReveal(activeReveal.id, { inputMethod: m })} />
-                  <InfoDot text={t(`mi_${m}`)} />
-                </View>
-              ))}
-            </View>
-
-            {activeReveal.type === 'number' && (
-              <>
-                <SliderRow label={t('digits')} value={activeReveal.digitCount} min={1} max={4} onChange={(v) => patchReveal(activeReveal.id, { digitCount: v })} />
-                <SectionHeader>{t('indexList')}</SectionHeader>
-                <View style={styles.chipRow}>
-                  <Chip label={t('indexListNone')} active={!activeReveal.indexListId} onPress={() => patchReveal(activeReveal.id, { indexListId: undefined })} />
-                  {lists.map((l) => (
-                    <Chip key={l.id} label={l.name} active={activeReveal.indexListId === l.id} onPress={() => patchReveal(activeReveal.id, { indexListId: l.id })} />
-                  ))}
-                </View>
-              </>
-            )}
-
-            {(activeReveal.type === 'number' || activeReveal.type === 'text') && (
-              <View style={styles.inlineRow}>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  value={activeReveal.prefix}
-                  onChangeText={(prefix) => patchReveal(activeReveal.id, { prefix })}
-                  placeholder={t('prefixLabel')}
-                  placeholderTextColor={colors.textDim}
-                />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  value={activeReveal.suffix}
-                  onChangeText={(suffix) => patchReveal(activeReveal.id, { suffix })}
-                  placeholder={t('suffixLabel')}
-                  placeholderTextColor={colors.textDim}
-                />
-              </View>
-            )}
-
-            {/* look */}
-            <SectionHeader info={t('positionHint')}>{t('position')}</SectionHeader>
+        {/* ── Step 4: placement & look ─────────────────────────────── */}
+        {draft.uri && activeReveal ? (
+          <View style={styles.stepBox}>
+            <StepHeader n={4} title={t('stepPlaceTitle')} hint={t('stepPlaceHint')} done={step2Done} />
             {(activeReveal.type === 'number' || activeReveal.type === 'text') && (
               <TextInput
                 style={styles.input}
@@ -448,38 +487,61 @@ export function EditorScreen({ navigation, route }: Props) {
               />
             )}
             <SliderRow label={t('size')} value={activeReveal.style.fontSize} min={14} max={140} onChange={(v) => patchStyle(activeReveal.id, { fontSize: v })} />
-            <SliderRow
-              label={t('weight')}
-              value={['400', '600', '700', '900'].indexOf(activeReveal.style.fontWeight)}
-              min={0}
-              max={3}
-              onChange={(v) => patchStyle(activeReveal.id, { fontWeight: (['400', '600', '700', '900'] as const)[Math.round(v)] })}
-              format={(v) => ['400', '600', '700', '900'][Math.round(v)]}
-            />
-            <SliderRow label={t('opacity')} value={activeReveal.style.opacity} min={0.1} max={1} step={0.01} onChange={(v) => patchStyle(activeReveal.id, { opacity: v })} format={(v) => v.toFixed(2)} />
-            <SliderRow label={t('rotation')} value={activeReveal.style.rotation} min={-45} max={45} onChange={(v) => patchStyle(activeReveal.id, { rotation: v })} format={(v) => `${Math.round(v)}°`} />
-            <SliderRow label={t('skew')} value={activeReveal.style.skewX} min={-30} max={30} onChange={(v) => patchStyle(activeReveal.id, { skewX: v })} format={(v) => `${Math.round(v)}°`} />
 
-            <SectionHeader>{t('color')}</SectionHeader>
+            <Label style={styles.fieldLabel}>{t('color')}</Label>
             <ColorSwatches value={activeReveal.style.color} onChange={(color) => patchStyle(activeReveal.id, { color })} />
 
-            <SectionHeader>{t('font')}</SectionHeader>
-            <View style={styles.chipRow}>
-              {FONTS.map((f) => (
-                <Chip key={f} label={f} active={activeReveal.style.fontFamily === f} onPress={() => patchStyle(activeReveal.id, { fontFamily: f })} />
-              ))}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing(2) }}>
+              <Label style={styles.fieldLabel}>{t('animation')}</Label>
+              <InfoDot text={t('animationInfo')} />
             </View>
-
-            <SectionHeader info={t('animationInfo')}>{t('animation')}</SectionHeader>
             <View style={styles.chipRow}>
               {ANIMATIONS.map((a) => (
                 <Chip key={a} label={t(`anim_${a}`)} active={(activeReveal.animation ?? 'fade') === a} onPress={() => patchReveal(activeReveal.id, { animation: a })} />
               ))}
             </View>
 
-            <Btn small kind="danger" label={t('removeReveal')} onPress={() => removeReveal(activeReveal.id)} style={{ marginTop: spacing(4) }} />
+            {/* advanced: everything a first-time user doesn't need */}
+            <Pressable onPress={() => setShowAdvanced((s) => !s)} style={styles.advancedToggle}>
+              <Text style={styles.advancedToggleText}>
+                {showAdvanced ? '▾' : '▸'} {t('advanced')}
+              </Text>
+            </Pressable>
+            {showAdvanced && (
+              <>
+                <SliderRow
+                  label={t('weight')}
+                  value={['400', '600', '700', '900'].indexOf(activeReveal.style.fontWeight)}
+                  min={0}
+                  max={3}
+                  onChange={(v) => patchStyle(activeReveal.id, { fontWeight: (['400', '600', '700', '900'] as const)[Math.round(v)] })}
+                  format={(v) => ['400', '600', '700', '900'][Math.round(v)]}
+                />
+                <SliderRow label={t('opacity')} value={activeReveal.style.opacity} min={0.1} max={1} step={0.01} onChange={(v) => patchStyle(activeReveal.id, { opacity: v })} format={(v) => v.toFixed(2)} />
+                <SliderRow label={t('rotation')} value={activeReveal.style.rotation} min={-45} max={45} onChange={(v) => patchStyle(activeReveal.id, { rotation: v })} format={(v) => `${Math.round(v)}°`} />
+                <SliderRow label={t('skew')} value={activeReveal.style.skewX} min={-30} max={30} onChange={(v) => patchStyle(activeReveal.id, { skewX: v })} format={(v) => `${Math.round(v)}°`} />
+                <Label style={styles.fieldLabel}>{t('font')}</Label>
+                <View style={styles.chipRow}>
+                  {FONTS.map((f) => (
+                    <Chip key={f} label={f} active={activeReveal.style.fontFamily === f} onPress={() => patchStyle(activeReveal.id, { fontFamily: f })} />
+                  ))}
+                </View>
+                <Btn small kind="danger" label={t('removeReveal')} onPress={() => removeReveal(activeReveal.id)} style={{ marginTop: spacing(3) }} />
+              </>
+            )}
           </View>
-        )}
+        ) : null}
+
+        {/* ── Step 5: try & save ───────────────────────────────────── */}
+        {draft.uri ? (
+          <View style={styles.stepBox}>
+            <StepHeader n={5} title={t('stepFinishTitle')} hint={t('stepFinishHint')} done={false} />
+            <View style={{ gap: spacing(2) }}>
+              <Btn block kind="primary" label={`🎭 ${t('testPerform')}`} onPress={handleTestPerform} />
+              <Btn block kind="gold" label={t('save')} onPress={handleSave} />
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -499,9 +561,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  previewEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  input: {
+  previewEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing(3), padding: spacing(5) },
+  previewEmptyText: { color: colors.textDim, fontSize: 13, textAlign: 'center' },
+  stepBox: {
     backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing(4),
+    marginTop: spacing(3),
+  },
+  stepRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(3), marginBottom: spacing(3) },
+  stepDot: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.surfaceHigh,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepDotDone: { backgroundColor: colors.goldSoft, borderColor: colors.gold },
+  stepDotText: { color: colors.gold, fontSize: 13, fontWeight: '800' },
+  stepTitle: { color: colors.text, fontSize: 15, fontWeight: '700', flex: 1 },
+  fieldLabel: { marginTop: spacing(2), marginBottom: spacing(1) },
+  input: {
+    backgroundColor: colors.bg,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,
@@ -509,19 +595,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing(3),
     paddingVertical: spacing(3),
     fontSize: 15,
-    marginVertical: spacing(1),
+    marginVertical: spacing(2),
   },
-  scrubRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
+  scrubRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), marginTop: spacing(2) },
   time: { color: colors.textDim, fontSize: 12, fontVariant: ['tabular-nums'] },
   frameRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(2), marginTop: spacing(2), justifyContent: 'center' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
   inlineRow: { flexDirection: 'row', gap: spacing(2), alignItems: 'center', marginTop: spacing(2) },
-  revealBox: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing(4),
-    marginTop: spacing(2),
-  },
+  advancedToggle: { marginTop: spacing(3), paddingVertical: spacing(2) },
+  advancedToggleText: { color: colors.accent, fontSize: 14, fontWeight: '600' },
 });

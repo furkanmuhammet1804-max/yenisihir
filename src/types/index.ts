@@ -107,6 +107,8 @@ export interface ShareProfile {
 
 export interface Settings {
   language: Language;
+  /** First-launch intro has been completed or skipped. */
+  onboardingSeen: boolean;
   defaultInputMethod: InputMethod;
   gridSize: GridSize;
   /** Practice mode: faintly show the grid + entered digits to the performer. */

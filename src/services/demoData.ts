@@ -1,8 +1,9 @@
-﻿import type { OverlayStyle, TrickVideo } from '../types';
+import type { OverlayStyle, TrickVideo } from '../types';
 
 /**
- * Demo entries stream royalty-free sample clips so the app never opens empty.
- * Users replace them with their own pre-recorded prediction videos.
+ * Ready examples: five streaming sample clips, one per prediction style, so a
+ * first-time user can watch and perform every core trick before importing
+ * their own footage.
  */
 const baseStyle: OverlayStyle = {
   x: 0.5,
@@ -17,11 +18,13 @@ const baseStyle: OverlayStyle = {
   scale: 1,
 };
 
+const BUCKET = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample';
+
 export const demoVideos: TrickVideo[] = [
   {
     id: 'demo_number',
-    name: 'Demo — Sayı Tahmini',
-    uri: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    name: 'Sayı Tahmini',
+    uri: `${BUCKET}/ForBiggerEscapes.mp4`,
     durationSec: 15,
     width: 1280,
     height: 720,
@@ -45,9 +48,38 @@ export const demoVideos: TrickVideo[] = [
     ],
   },
   {
+    id: 'demo_card',
+    name: 'Kart Tahmini',
+    uri: `${BUCKET}/ForBiggerBlazes.mp4`,
+    durationSec: 15,
+    width: 1280,
+    height: 720,
+    isDemo: true,
+    // showcases the premium gate end to end with the mock entitlement
+    premium: true,
+    createdAt: 0,
+    updatedAt: 0,
+    reveals: [
+      {
+        id: 'demo_card_r1',
+        label: 'Kart',
+        type: 'number',
+        inputMethod: 'pause',
+        inTime: 9,
+        outTime: 0,
+        animation: 'pop',
+        digitCount: 2,
+        indexListId: 'builtin_cards',
+        style: { ...baseStyle, fontSize: 40, color: '#8B5CF6' },
+        prefix: '',
+        suffix: '',
+      },
+    ],
+  },
+  {
     id: 'demo_text',
-    name: 'Demo — İsim Tahmini',
-    uri: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+    name: 'İsim Tahmini',
+    uri: `${BUCKET}/ForBiggerJoyrides.mp4`,
     durationSec: 15,
     width: 1280,
     height: 720,
@@ -71,29 +103,53 @@ export const demoVideos: TrickVideo[] = [
     ],
   },
   {
-    id: 'demo_card',
-    name: 'Demo — Kart Tahmini (Index)',
-    uri: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    id: 'demo_country',
+    name: 'Ülke Tahmini',
+    uri: `${BUCKET}/ForBiggerFun.mp4`,
     durationSec: 15,
     width: 1280,
     height: 720,
     isDemo: true,
-    // showcases the premium gate end to end with the mock entitlement
-    premium: true,
     createdAt: 0,
     updatedAt: 0,
     reveals: [
       {
-        id: 'demo_card_r1',
-        label: 'Kart',
+        id: 'demo_country_r1',
+        label: 'Ülke',
         type: 'number',
-        inputMethod: 'pause',
+        inputMethod: 'gridDim',
+        inTime: 8,
+        outTime: 0,
+        animation: 'fade',
+        digitCount: 2,
+        indexListId: 'builtin_countries',
+        style: { ...baseStyle, fontSize: 44, color: '#3DD6D0' },
+        prefix: '',
+        suffix: '',
+      },
+    ],
+  },
+  {
+    id: 'demo_drawing',
+    name: 'Çizim Tahmini',
+    uri: `${BUCKET}/ForBiggerMeltdowns.mp4`,
+    durationSec: 15,
+    width: 1280,
+    height: 720,
+    isDemo: true,
+    createdAt: 0,
+    updatedAt: 0,
+    reveals: [
+      {
+        id: 'demo_drawing_r1',
+        label: 'Çizim',
+        type: 'drawing',
+        inputMethod: 'drawing',
         inTime: 9,
         outTime: 0,
-        animation: 'pop',
+        animation: 'fade',
         digitCount: 2,
-        indexListId: 'builtin_cards',
-        style: { ...baseStyle, fontSize: 40, color: '#8B5CF6' },
+        style: { ...baseStyle, color: '#F2F0EB' },
         prefix: '',
         suffix: '',
       },

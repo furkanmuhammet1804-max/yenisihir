@@ -6,6 +6,7 @@ import { translate, type StringKey } from '../i18n';
 
 const defaults: Settings = {
   language: 'tr',
+  onboardingSeen: false,
   defaultInputMethod: 'gridNoDim',
   // 4x3 keypad has explicit 0/delete/commit cells; 3x3 still enters 0 via long-press
   gridSize: '4x3',

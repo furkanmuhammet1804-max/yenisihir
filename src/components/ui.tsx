@@ -48,6 +48,7 @@ export function Btn({
   kind = 'primary',
   info,
   small,
+  block,
   style,
 }: {
   label: string;
@@ -55,6 +56,8 @@ export function Btn({
   kind?: 'primary' | 'ghost' | 'danger' | 'gold';
   info?: string;
   small?: boolean;
+  /** Stretch to the full available width. */
+  block?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const bg =
@@ -67,6 +70,7 @@ export function Btn({
         style={({ pressed }) => [
           styles.btn,
           small && styles.btnSmall,
+          block && { flex: 1 },
           { backgroundColor: bg, opacity: pressed ? 0.75 : 1 },
           kind === 'ghost' && styles.btnGhost,
         ]}

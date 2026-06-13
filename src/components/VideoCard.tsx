@@ -51,7 +51,6 @@ export function VideoCard({
           </Text>
           <Text style={styles.sub}>
             {video.durationSec > 0 ? formatTime(video.durationSec) : '—'}
-            {video.isDemo ? '  ·  DEMO' : ''}
             {video.premium ? `  ·  ${t('premiumBadge').toUpperCase()}` : ''}
           </Text>
         </View>
