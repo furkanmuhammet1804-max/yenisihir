@@ -25,7 +25,10 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -46,6 +49,12 @@
           "photosPermission": "MindFrame videolarınızı ve fotoğraflarınızı performanslarda kullanmak için galeriye erişir."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6ff12a55-bcec-4cc1-9d49-deac0d8de08d"
+      }
+    },
+    "owner": "furkanssenn"
   }
 }
